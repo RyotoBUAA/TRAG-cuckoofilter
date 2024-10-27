@@ -9,6 +9,7 @@
 #include "packedtable.h"
 #include "printutil.h"
 #include "singletable.h"
+#include "node.h"
 
 namespace cuckoofilter {
 // status returned by a cuckoo filter operation
