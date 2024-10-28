@@ -10,6 +10,11 @@
 
 namespace cuckoofilter {
 
+    class EntityNode; 
+    struct EntityInfo;
+
+    extern std::map<std::string, EntityInfo*> addr_map;
+
     struct EntityStruct {
         std::string content;
 
@@ -34,6 +39,7 @@ namespace cuckoofilter {
         EntityAddr * head;
     };
 
+
     class EntityNode {
         private:
             std::string entity;
@@ -42,6 +48,20 @@ namespace cuckoofilter {
         public:
             EntityNode(std::string entity_name) : entity(entity_name) {
                 parent = NULL;
+
+                EntityAddr * entityAddr = new EntityAddr();
+                entityAddr->addr = this;
+
+                if (addr_map[entity_name]){
+                    entityAddr->next = addr_map[entity_name]->head;
+                    addr_map[entity_name]->head = entityAddr;
+                }else{
+                    EntityInfo * info = new EntityInfo();
+                    addr_map[entity_name] = info;
+                    info->temperature = 0;
+                    addr_map[entity_name]->head = entityAddr;
+                }
+
             }
 
             void add_children(EntityNode * node) {
@@ -128,6 +148,7 @@ namespace cuckoofilter {
                         if (sub_node != front->get_entity()){
                             if (front->get_parent() == NULL || sub_node != front->get_parent()->get_entity()){
                                 if (!vis[sub_node]){
+                                    vis[sub_node] = 1;
                                     EntityNode * new_node = new EntityNode(sub_node);
                                     front->add_children(new_node);
                                     temp_queue.push(new_node);
@@ -167,6 +188,7 @@ namespace cuckoofilter {
             }
 
     };
+
 }
 
 #endif

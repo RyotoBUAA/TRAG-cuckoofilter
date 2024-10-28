@@ -15,6 +15,12 @@
 using cuckoofilter::CuckooFilter;
 using cuckoofilter::EntityTree;
 using cuckoofilter::EntityNode;
+using cuckoofilter::EntityInfo;
+using cuckoofilter::EntityAddr;
+
+namespace cuckoofilter {
+    std::map<std::string, EntityInfo*> addr_map;
+}
 
 std::string trim(const std::string& str) {
     size_t first = str.find_first_not_of(" \t\n\r\f\v"); 
@@ -36,47 +42,6 @@ std::vector<std::string> split(const std::string& str, char delimiter) {
 }
 
 int main(int argc, char **argv) {
-  // size_t total_items = 1000000;
-
-  // // Create a cuckoo filter where each item is of type size_t and
-  // // use 12 bits for each item:
-  // //    CuckooFilter<size_t, 12> filter(total_items);
-  // // To enable semi-sorting, define the storage of cuckoo filter to be
-  // // PackedTable, accepting keys of size_t type and making 13 bits
-  // // for each key:
-  // //   CuckooFilter<size_t, 13, cuckoofilter::PackedTable> filter(total_items);
-  // CuckooFilter<EntityNode, 32> filter(total_items);
-
-  // // Insert items to this cuckoo filter
-  // size_t num_inserted = 0;
-  // for (size_t i = 0; i < total_items; i++, num_inserted++) {
-  //   EntityNode temp = {"test"+std::to_string(i)};
-  //   if (filter.Add(temp) != cuckoofilter::Ok) {
-  //     break;
-  //   }
-  // }
-
-  // // Check if previously inserted items are in the filter, expected
-  // // true for all items
-  // for (size_t i = 0; i < num_inserted; i++) {
-  //   EntityNode temp = {"test"+std::to_string(i)};
-  //   assert(filter.Contain(temp) == cuckoofilter::Ok);
-  // }
-
-  // // Check non-existing items, a few false positives expected
-  // size_t total_queries = 0;
-  // size_t false_queries = 0;
-  // for (size_t i = total_items; i < 2 * total_items; i++) {
-  //   EntityNode temp = {"test"+std::to_string(i)};
-  //   if (filter.Contain(temp) == cuckoofilter::Ok) {
-  //     false_queries++;
-  //   }
-  //   total_queries++;
-  // }
-
-  // // Output the measured false positive rate
-  // std::cout << "false positive rate is "
-  //           << 100.0 * false_queries / total_queries << "%\n";
 
   FILE * in = fopen("entities_file.csv", "r");
   char input[1024];
@@ -104,14 +69,24 @@ int main(int argc, char **argv) {
   for (std::string root : root_list){
     EntityTree * new_tree = new EntityTree(root, data);
     // new_tree->print_tree();
-    // EntityNode * n = new_tree->get_root();
-    // for (EntityNode * temp : n->get_children()){
-    //   std::cout << temp->get_context() << std::endl;
-    // }
+    EntityNode * n = new_tree->get_root();
+    for (EntityNode * temp : n->get_children()){
+      // std::cout << temp->get_context() << std::endl;
+    }
     forest.push_back(new_tree);
     success_num++;
-    if (success_num > 50) break;
+    // std::cout << "tree: " << success_num << std::endl;
+    // if (success_num > 50) break;
   }
+
+  EntityInfo * info = cuckoofilter::addr_map["骨科"];
+  EntityAddr * addr = info->head;
+  int cnt = 0;
+  while (addr != NULL){
+    cnt++;
+    addr = addr->next;
+  }
+  std::cout << "骨科" << ": " << cnt << std::endl;
 
   return 0;
 }
