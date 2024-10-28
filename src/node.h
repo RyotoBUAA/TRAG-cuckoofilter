@@ -5,111 +5,168 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <utility>
+#include <queue>
 
-namespace cuckoofilter{
+namespace cuckoofilter {
 
-    struct EntityNode{
-
+    struct EntityStruct {
         std::string content;
 
         operator uint64_t() const {
             uint64_t result = 0, b = 31, mod = 998244353;
             int n = content.size();
-            for (int i=0;i<n;i++){
-                result = result*b + content[i];
+            for (int i = 0; i < n; i++) {
+                result = result * b + content[i];
                 if (result >= mod) result %= mod;
             }
             return result;
         }
-
     };
 
-    struct EntityAddr{
-        int * addr;
+    struct EntityAddr {
+        EntityNode * addr;
         EntityAddr * next;
     };
 
-    struct EntityInfo{
+    struct EntityInfo {
         int temperature;
         EntityAddr * head;
     };
 
     class EntityNode {
+        private:
+            std::string entity;
+            EntityNode * parent;
+            std::vector<EntityNode*> children;
+        public:
+            EntityNode(std::string entity_name) : entity(entity_name) {
+                parent = NULL;
+            }
 
-        std::string entity;
-        EntityNode * parent;
-        vector<EntityNode*> children;
+            void add_children(EntityNode * node) {
+                node->parent = this;
+                children.push_back(node);
+            }
 
-        EntityNode(std::string entity_name) : entity(entity_name) {}
+            std::vector<EntityNode*> get_children() {
+                return children;
+            }
 
-        void add_children(EntityNode * node){
-            node->parent = this;
-            children.push_back(node);
-        }
+            EntityNode * get_parent() {
+                return parent;
+            }
 
-        vector<EntityNode*> get_children(){
-            return children;
-        }
+            std::string get_entity() {
+                return entity;
+            }
 
-        EntityNode * get_parent(){
-            return parent;
-        }
-
-        std::string get_entity(){
-            return entity;
-        }
-
-        std::string get_context(){
-            vector<EntityNode*> ancestors = this->get_ancestors();
-            int ancestor_length = ancestors.size();
-            std::string context = "";
-            if (ancestor_length > 0){
-                context += "在某个树型关系中，"+this->entity+"的向上的层级关系有：";
-                for (int i=0;i<ancestor_length;i++){
-                    context += ancestors[i]->entity;
-                    if (i<ancestor_length-1) context += "、";
+            std::string get_context() {
+                std::vector<EntityNode*> ancestors = this->get_ancestors();
+                int ancestor_length = ancestors.size();
+                std::string context = "";
+                if (ancestor_length > 0) {
+                    context += "在某个树型关系中，" + this->entity + "的向上的层级关系有：";
+                    for (int i = 0; i < ancestor_length; i++) {
+                        context += ancestors[i]->entity;
+                        if (i < ancestor_length - 1) context += "、";
+                    }
                 }
-            }
 
-            int children_length = children.size();
-            if (children_length > 0){
-                if (ancestor_length > 0) context += "；";
-                context += this->entity+"的向下的子节点有：";
-                for (int i=0;i<children_length;i++){
-                    context += children[i]->entity;
-                    if (i<children_length-1) context += "、";
+                int children_length = children.size();
+                if (children_length > 0) {
+                    if (ancestor_length > 0) context += "；";
+                    context += this->entity + "的向下的子节点有：";
+                    for (int i = 0; i < children_length; i++) {
+                        context += children[i]->entity;
+                        if (i < children_length - 1) context += "、";
+                    }
                 }
+
+                context += "。";
+                return context;
             }
 
-            context += "。";
-            return context;
-        }
-
-        vector<EntityNode*> get_ancestors(){
-            vector<EntityNode*> ancestors;
-            EntityNode * ancestor = this->parent;
-            while (ancestor != NULL){
-                ancestors.push_back(ancestor);
-                ancestor = ancestor->parent;
+            std::vector<EntityNode*> get_ancestors() {
+                std::vector<EntityNode*> ancestors;
+                EntityNode * ancestor = this->parent;
+                while (ancestor != NULL) {
+                    ancestors.push_back(ancestor);
+                    ancestor = ancestor->parent;
+                }
+                return ancestors;
             }
-            return ancestors;
-        }
-
-
-
     };
-
 
     class EntityTree {
 
-        EntityNode * root;
+        private:
+            EntityNode * root;
+        public: 
+            
 
-        EntityTree(std::string root_entity, set< pair<string, string> > data){
+            EntityTree(std::string root_entity, std::set<std::pair<std::string, std::string>> data) {
 
-        }
+                root = new EntityNode(root_entity);
+
+                std::map< std::string, std::set<std::string> > edges;
+
+                for (auto edge : data){
+                    edges[edge.first].insert(edge.second);
+                    edges[edge.second].insert(edge.first);
+                }
+
+                std::queue<EntityNode *> temp_queue;
+                temp_queue.push(root);
+                std::map<std::string, int> vis;
+
+                while (!temp_queue.empty()){
+                    EntityNode * front = temp_queue.front();
+                    temp_queue.pop();
+                    vis[front->get_entity()] = 1;
+                    for (std::string sub_node : edges[front->get_entity()]){
+                        if (sub_node != front->get_entity()){
+                            if (front->get_parent() == NULL || sub_node != front->get_parent()->get_entity()){
+                                if (!vis[sub_node]){
+                                    EntityNode * new_node = new EntityNode(sub_node);
+                                    front->add_children(new_node);
+                                    temp_queue.push(new_node);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            EntityNode * get_root(){
+                return root;
+            }
+
+            void print_tree(){
+                std::queue<EntityNode*> temp_queue;
+                temp_queue.push(root);
+                int hierarchy = 0;
+                while (!temp_queue.empty()){
+                    std::cout << "hierarchy: " << hierarchy << " ";
+                    std::queue<EntityNode*> temp_queue_peer;
+                    while (!temp_queue.empty()){
+                        EntityNode * front = temp_queue.front();
+                        temp_queue.pop();
+                        std::cout << front->get_entity() << " ";
+                        for (EntityNode * sub_node : front->get_children()) if(sub_node != NULL){
+                            temp_queue_peer.push(sub_node);
+                        }
+                    }
+                    while (!temp_queue_peer.empty()){
+                        temp_queue.push(temp_queue_peer.front());
+                        temp_queue_peer.pop();
+                    }
+                    std::cout << std::endl;
+                    hierarchy++;
+                }
+            }
 
     };
-
 }
 
 #endif
