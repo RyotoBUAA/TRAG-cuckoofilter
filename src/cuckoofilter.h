@@ -43,6 +43,7 @@ class CuckooFilter {
   typedef struct {
     size_t index;
     uint32_t tag;
+    EntityInfo * info;
     bool used;
   } VictimCache;
 
@@ -79,7 +80,7 @@ class CuckooFilter {
     return IndexHash((uint32_t)(index ^ (tag * 0x5bd1e995)));
   }
 
-  Status AddImpl(const size_t i, const uint32_t tag);
+  Status AddImpl(const size_t i, const uint32_t tag, EntityInfo * info);
 
   // load factor is the fraction of occupancy
   double LoadFactor() const { return 1.0 * Size() / table_->SizeInTags(); }
@@ -95,16 +96,21 @@ class CuckooFilter {
       num_buckets <<= 1;
     }
     victim_.used = false;
+    std::cout << "num_buckets: " << num_buckets << std::endl;
     table_ = new TableType<bits_per_item>(num_buckets);
   }
 
   ~CuckooFilter() { delete table_; }
 
   // Add an item to the filter.
-  Status Add(const ItemType &item);
+  Status Add(const ItemType &item, EntityInfo * info);
 
   // Report if the item is inserted, with false positive rate.
   Status Contain(const ItemType &item) const;
+
+  EntityInfo * Extract(const ItemType &item) const;
+
+  void Sort();
 
   // Delete an key from the filter
   Status Delete(const ItemType &item);
@@ -123,7 +129,7 @@ class CuckooFilter {
 template <typename ItemType, size_t bits_per_item,
           template <size_t> class TableType, typename HashFamily>
 Status CuckooFilter<ItemType, bits_per_item, TableType, HashFamily>::Add(
-    const ItemType &item) {
+    const ItemType &item, EntityInfo * info) {
   size_t i;
   uint32_t tag;
 
@@ -132,26 +138,29 @@ Status CuckooFilter<ItemType, bits_per_item, TableType, HashFamily>::Add(
   }
 
   GenerateIndexTagHash(item, &i, &tag);
-  return AddImpl(i, tag);
+  return AddImpl(i, tag, info);
 }
 
 template <typename ItemType, size_t bits_per_item,
           template <size_t> class TableType, typename HashFamily>
 Status CuckooFilter<ItemType, bits_per_item, TableType, HashFamily>::AddImpl(
-    const size_t i, const uint32_t tag) {
+    const size_t i, const uint32_t tag, EntityInfo * info) {
   size_t curindex = i;
   uint32_t curtag = tag;
   uint32_t oldtag;
+  EntityInfo * curInfo = info;
+  EntityInfo * oldInfo;
 
   for (uint32_t count = 0; count < kMaxCuckooCount; count++) {
     bool kickout = count > 0;
     oldtag = 0;
-    if (table_->InsertTagToBucket(curindex, curtag, kickout, oldtag)) {
+    if (table_->InsertTagToBucket(curindex, curtag, curInfo, kickout, oldtag, &oldInfo)) {
       num_items_++;
       return Ok;
     }
     if (kickout) {
       curtag = oldtag;
+      curInfo = oldInfo;
     }
     curindex = AltIndex(curindex, curtag);
   }
@@ -159,6 +168,8 @@ Status CuckooFilter<ItemType, bits_per_item, TableType, HashFamily>::AddImpl(
   victim_.index = curindex;
   victim_.tag = curtag;
   victim_.used = true;
+  victim_.info = curInfo;
+
   return Ok;
 }
 
@@ -184,6 +195,39 @@ Status CuckooFilter<ItemType, bits_per_item, TableType, HashFamily>::Contain(
     return NotFound;
   }
 }
+
+template <typename ItemType, size_t bits_per_item,
+          template <size_t> class TableType, typename HashFamily>
+EntityInfo * CuckooFilter<ItemType, bits_per_item, TableType, HashFamily>::Extract(
+const ItemType &key) const {
+  bool found = false;
+  size_t i1, i2;
+  uint32_t tag;
+
+  GenerateIndexTagHash(key, &i1, &tag);
+  i2 = AltIndex(i1, tag);
+
+  assert(i1 == AltIndex(i2, tag));
+
+  found = victim_.used && (tag == victim_.tag) &&
+          (i1 == victim_.index || i2 == victim_.index);
+
+  if (found){
+    return victim_.info;
+  }else {
+    return table_->FindInfoInBuckets(i1, i2, tag);
+  }
+
+}
+
+template <typename ItemType, size_t bits_per_item,
+          template <size_t> class TableType, typename HashFamily>
+void CuckooFilter<ItemType, bits_per_item, TableType, HashFamily>::Sort(){
+
+  table_->SortTag();
+
+}
+
 
 template <typename ItemType, size_t bits_per_item,
           template <size_t> class TableType, typename HashFamily>
@@ -214,7 +258,8 @@ TryEliminateVictim:
     victim_.used = false;
     size_t i = victim_.index;
     uint32_t tag = victim_.tag;
-    AddImpl(i, tag);
+    EntityInfo * info = victim_.info;
+    AddImpl(i, tag, info);
   }
   return Ok;
 }

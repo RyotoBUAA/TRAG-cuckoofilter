@@ -7,15 +7,16 @@
 #include <vector>
 #include <utility>
 #include <queue>
-
+#include <unordered_map>
 namespace cuckoofilter {
 
     class EntityNode; 
     struct EntityInfo;
 
-    extern std::map<std::string, EntityInfo*> addr_map;
+    extern std::unordered_map<std::string, EntityInfo*> addr_map;
     extern EntityInfo * temp_info;
-    extern EntityInfo * result_info;
+    extern EntityInfo * result_info; // result of readTag
+    extern std::set<uint64_t> first_hash;
 
     struct EntityStruct {
         
@@ -23,9 +24,8 @@ namespace cuckoofilter {
 
         operator uint64_t() const {
             uint64_t result = 0, b = 31, mod = 998244353;
-            int n = content.size();
-            for (int i = 0; i < n; i++) {
-                result = result * b + content[i];
+            for (char c : content) {
+                result = result * b + c;
                 if (result >= mod) result %= mod;
             }
             return result;

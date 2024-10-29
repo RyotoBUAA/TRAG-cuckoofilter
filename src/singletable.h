@@ -36,7 +36,7 @@ class SingleTable {
  public:
   explicit SingleTable(const size_t num) : num_buckets_(num) {
     buckets_ = new Bucket[num_buckets_ + kPaddingBuckets];
-    memset(buckets_, 0, kBytesPerBucket * (num_buckets_ + kPaddingBuckets));
+    memset(buckets_, 0, sizeof(Bucket) * (num_buckets_ + kPaddingBuckets));
   }
 
   ~SingleTable() { 
@@ -65,7 +65,10 @@ class SingleTable {
   }
 
   // read tag from pos(i,j)
-  inline uint32_t ReadTag(const size_t i, const size_t j) const {
+  inline uint32_t ReadTag(const size_t i, const size_t j, EntityInfo ** result) const {
+    
+    *result = buckets_[i].info_[j];
+
     const char *p = buckets_[i].bits_;
     uint32_t tag;
     /* following code only works for little-endian */
@@ -90,10 +93,11 @@ class SingleTable {
   }
 
   // write tag to pos(i,j)
-  inline void WriteTag(const size_t i, const size_t j, const uint32_t t) {
+  inline void WriteTag(const size_t i, const size_t j, const uint32_t t, EntityInfo * info) {
 
-    std::cout << "j: " << j << std::endl;
-    std::cout << temp_info << std::endl;
+    // std::cout << "j: " << j << std::endl;
+    // std::cout << temp_info << std::endl;
+    buckets_[i].info_[j] = info; // 将链表存到桶内
 
     char *p = buckets_[i].bits_;
     uint32_t tag = t & kTagMask;
@@ -127,6 +131,67 @@ class SingleTable {
     }
   }
 
+  inline void SortTag() {
+    
+    
+    for (size_t i=0;i<num_buckets_;i++){
+
+      int key = 0;
+
+      Bucket * bucket_i = buckets_+i;
+
+      // EntityInfo * p0 = bucket_i->info_[0];
+      // EntityInfo * p1 = bucket_i->info_[1];
+      // EntityInfo * p2 = bucket_i->info_[2];
+      // EntityInfo * p3 = bucket_i->info_[3];
+
+      for (size_t j = 0; j < kTagsPerBucket; j++) {
+        int bubble_key = 0;
+        for (size_t k = kTagsPerBucket-1; k > j; k--){
+
+          if (bucket_i->info_[j] != NULL && bucket_i->info_[k] != NULL
+          && bucket_i->info_[j]->temperature < bucket_i->info_[k]->temperature){
+            bubble_key = 1;
+            key = 1;
+            EntityInfo * info_j = bucket_i->info_[j];
+            EntityInfo * info_k = bucket_i->info_[k];
+            EntityInfo * r;
+            uint32_t tag_j = ReadTag(i, j, &r);
+            uint32_t tag_k = ReadTag(i, k, &r);
+
+            WriteTag(i, j, tag_k, info_k);
+            WriteTag(i, k, tag_j, info_j);
+
+          }
+        }
+        if (!bubble_key) break;
+      }
+
+      if (key) {
+        
+        // std::cout << p0 << std::endl;
+        // std::cout << p1 << std::endl;
+        // std::cout << p2 << std::endl;
+        // std::cout << p3 << std::endl;
+
+        // std::cout << bucket_i->info_[0] << std::endl;
+        // std::cout << bucket_i->info_[1] << std::endl;
+        // std::cout << bucket_i->info_[2] << std::endl;
+        // std::cout << bucket_i->info_[3] << std::endl;
+
+        // for (int i=0;i<3;i++){
+        //   if (bucket_i->info_[i] != NULL){
+        //     std::cout << bucket_i->info_[i]->temperature << std::endl;
+        //     std::cout << bucket_i->info_[i]->head->addr->get_entity() << std::endl;
+        //   }
+        // }
+
+      }
+
+    }
+
+  }
+
   inline bool FindTagInBuckets(const size_t i1, const size_t i2,
                                const uint32_t tag) const {
     const char *p1 = buckets_[i1].bits_;
@@ -146,12 +211,31 @@ class SingleTable {
       return hasvalue16(v1, tag) || hasvalue16(v2, tag);
     } else {
       for (size_t j = 0; j < kTagsPerBucket; j++) {
-        if ((ReadTag(i1, j) == tag) || (ReadTag(i2, j) == tag)) {
+        EntityInfo * r;
+        if ((ReadTag(i1, j, &r) == tag) || (ReadTag(i2, j, &r) == tag)) {
           return true;
         }
       }
       return false;
     }
+  }
+
+  inline EntityInfo * FindInfoInBuckets(const size_t i1, const size_t i2,
+                               const uint32_t tag) const {
+    for (size_t j = 0; j < kTagsPerBucket; j++) {
+      EntityInfo * r;
+      // std::cout << "r:" << r << std::endl;
+      if ((ReadTag(i1, j, &r) == tag)){
+        // std::cout << r << std::endl;
+        r->temperature++;
+        return r;
+      }else if (ReadTag(i2, j, &r) == tag) {
+        // std::cout << r << std::endl;
+        r->temperature++;
+        return r;
+      }
+    }
+    return NULL;
   }
 
   inline bool FindTagInBucket(const size_t i, const uint32_t tag) const {
@@ -174,7 +258,8 @@ class SingleTable {
       return hasvalue16(v, tag);
     } else {
       for (size_t j = 0; j < kTagsPerBucket; j++) {
-        if (ReadTag(i, j) == tag) {
+        EntityInfo * r;
+        if (ReadTag(i, j, &r) == tag) {
           return true;
         }
       }
@@ -184,27 +269,31 @@ class SingleTable {
 
   inline bool DeleteTagFromBucket(const size_t i, const uint32_t tag) {
     for (size_t j = 0; j < kTagsPerBucket; j++) {
-      if (ReadTag(i, j) == tag) {
+      EntityInfo * r;
+      if (ReadTag(i, j, &r) == tag) {
         assert(FindTagInBucket(i, tag) == true);
-        WriteTag(i, j, 0);
+        WriteTag(i, j, 0, NULL);
         return true;
       }
     }
     return false;
   }
 
-  inline bool InsertTagToBucket(const size_t i, const uint32_t tag,
-                                const bool kickout, uint32_t &oldtag) {
+  inline bool InsertTagToBucket(const size_t i, const uint32_t tag, EntityInfo * info,
+                                const bool kickout, uint32_t &oldtag, EntityInfo ** oldInfo) {
     for (size_t j = 0; j < kTagsPerBucket; j++) {
-      if (ReadTag(i, j) == 0) {
-        WriteTag(i, j, tag);
+      EntityInfo * r;
+      if (ReadTag(i, j, &r) == 0) {
+        WriteTag(i, j, tag, info);
         return true;
       }
     }
-    if (kickout) {
+    if (kickout) { // 要踢了
       size_t r = rand() % kTagsPerBucket;
-      oldtag = ReadTag(i, r);
-      WriteTag(i, r, tag);
+      EntityInfo * oldInfo_;
+      oldtag = ReadTag(i, r, &oldInfo_);
+      *oldInfo = oldInfo_;
+      WriteTag(i, r, tag, info);
     }
     return false;
   }
@@ -212,7 +301,8 @@ class SingleTable {
   inline size_t NumTagsInBucket(const size_t i) const {
     size_t num = 0;
     for (size_t j = 0; j < kTagsPerBucket; j++) {
-      if (ReadTag(i, j) != 0) {
+      EntityInfo * r;
+      if (ReadTag(i, j, &r) != 0) {
         num++;
       }
     }
