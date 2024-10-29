@@ -14,8 +14,11 @@ namespace cuckoofilter {
     struct EntityInfo;
 
     extern std::map<std::string, EntityInfo*> addr_map;
+    extern EntityInfo * temp_info;
+    extern EntityInfo * result_info;
 
     struct EntityStruct {
+        
         std::string content;
 
         operator uint64_t() const {

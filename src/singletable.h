@@ -8,6 +8,7 @@
 #include "bitsutil.h"
 #include "debug.h"
 #include "printutil.h"
+#include "node.h"
 
 namespace cuckoofilter {
 
@@ -25,6 +26,7 @@ class SingleTable {
 
   struct Bucket {
     char bits_[kBytesPerBucket];
+    EntityInfo * info_[4];
   } __attribute__((__packed__));
 
   // using a pointer adds one more indirection
@@ -89,6 +91,10 @@ class SingleTable {
 
   // write tag to pos(i,j)
   inline void WriteTag(const size_t i, const size_t j, const uint32_t t) {
+
+    std::cout << "j: " << j << std::endl;
+    std::cout << temp_info << std::endl;
+
     char *p = buckets_[i].bits_;
     uint32_t tag = t & kTagMask;
     /* following code only works for little-endian */
