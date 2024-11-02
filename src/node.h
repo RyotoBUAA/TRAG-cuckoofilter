@@ -26,7 +26,7 @@ namespace cuckoofilter {
             uint64_t result = 0, b = 31, mod = 998244353;
             for (char c : content) {
                 result = result * b + c;
-                if (result >= mod) result %= mod;
+                // if (result >= mod) result %= mod;
             }
             return result;
         }

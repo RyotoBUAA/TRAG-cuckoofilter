@@ -50,6 +50,8 @@ std::vector<std::string> split(const std::string& str, char delimiter) {
 
 int main(int argc, char **argv) {
 
+  std::cout << "at the beginning, bucket_count of map_addr: " << cuckoofilter::addr_map.bucket_count() << std::endl;
+
   std::cout << "char: " << sizeof(char) << std::endl;
   std::cout << "EntityInfo *: " << sizeof(EntityInfo*) << std::endl;
 
@@ -118,7 +120,7 @@ int main(int argc, char **argv) {
 
   std::cout << "inserted number: " << num_inserted << std::endl;
 
-  int M = 1;
+  int M = 1024;
   std::vector<std::string> str_v = {"消化内科", "骨科", "肌电图室", "特检科", "肺功能室", "呼吸科", "支纤镜室", "直交流感应电疗"};
 
   std::cout << std::endl;
@@ -182,6 +184,8 @@ int main(int argc, char **argv) {
   }
 
   std::cout << std::endl;
+
+  std::cout << "bucket_count of map_addr: " << cuckoofilter::addr_map.bucket_count() << std::endl;
 
   return 0;
 }
