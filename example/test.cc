@@ -11,8 +11,6 @@
 #include <utility>
 #include <queue>
 #include <set>
-#include <chrono>
-#include <iomanip>
 #include <unordered_map>
 
 using cuckoofilter::CuckooFilter;

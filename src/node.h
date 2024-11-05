@@ -8,6 +8,12 @@
 #include <utility>
 #include <queue>
 #include <unordered_map>
+#include <Python.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h> 
+
+namespace py = pybind11;
+
 namespace cuckoofilter {
 
     class EntityNode; 
