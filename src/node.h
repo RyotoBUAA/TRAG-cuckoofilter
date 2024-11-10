@@ -141,7 +141,7 @@ namespace cuckoofilter {
                 std::map< std::string, std::set<std::string> > edges;
 
                 for (auto edge : data){
-                    edges[edge.first].insert(edge.second);
+                    // edges[edge.first].insert(edge.second);
                     edges[edge.second].insert(edge.first);
                 }
 
@@ -194,6 +194,30 @@ namespace cuckoofilter {
                     std::cout << std::endl;
                     hierarchy++;
                 }
+            }
+
+            int count_num(){
+                int result = 0;
+                std::queue<EntityNode*> temp_queue;
+                if (root == NULL) return result;
+                temp_queue.push(root);
+                
+                while (!temp_queue.empty()){
+                    std::queue<EntityNode*> temp_queue_peer;
+                    while (!temp_queue.empty()){
+                        EntityNode * front = temp_queue.front();
+                        temp_queue.pop();
+                        result++;
+                        for (EntityNode * sub_node : front->get_children()) if(sub_node != NULL){
+                            temp_queue_peer.push(sub_node);
+                        }
+                    }
+                    while (!temp_queue_peer.empty()){
+                        temp_queue.push(temp_queue_peer.front());
+                        temp_queue_peer.pop();
+                    }
+                }
+                return result;
             }
 
     };

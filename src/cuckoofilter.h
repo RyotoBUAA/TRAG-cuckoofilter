@@ -130,7 +130,7 @@ class CuckooFilter {
       return tokens;
   }
 
-  void BuildTree(const size_t max_tree_num) {
+  void BuildTree(const size_t max_tree_num, const size_t max_node_num) {
 
     FILE * in = fopen("entities_file.csv", "r");
     char input[1024];
@@ -165,14 +165,20 @@ class CuckooFilter {
     std::vector<EntityTree*> forest;
 
     int success_num = 0;
+    int node_num = 0;
     for (std::string root : root_list){
       EntityTree * new_tree = new EntityTree(root, data);
+
+      int cc = new_tree->count_num();
+      if (cc+node_num > max_node_num) break;
+      node_num += cc;
+
       forest.push_back(new_tree);
       success_num++;
       if (success_num == max_tree_num){break;}
     }
 
-    std::cout << "build tree success, the length of forest: " << success_num << std::endl;
+    std::cout << "build tree success, the length of forest: " << success_num << ", the number of node: " << node_num << std::endl;
     
     size_t num_inserted = 0;
     for (auto node : cuckoofilter::addr_map){

@@ -39,5 +39,5 @@ PYBIND11_MODULE(cuckoo_filter_module, m) {
         .def("add", &cuckoofilter::CuckooFilter<cuckoofilter::EntityStruct, 12, cuckoofilter::SingleTable>::Add, py::arg("item"), py::arg("info"))
         .def("extract", &cuckoofilter::CuckooFilter<cuckoofilter::EntityStruct, 12, cuckoofilter::SingleTable>::Extract, py::arg("item"))
         .def("sort", &cuckoofilter::CuckooFilter<cuckoofilter::EntityStruct, 12, cuckoofilter::SingleTable>::Sort)
-        .def("build", &cuckoofilter::CuckooFilter<cuckoofilter::EntityStruct, 12, cuckoofilter::SingleTable>::BuildTree, py::arg("max_tree_num"));
+        .def("build", &cuckoofilter::CuckooFilter<cuckoofilter::EntityStruct, 12, cuckoofilter::SingleTable>::BuildTree, py::arg("max_tree_num"), py::arg("max_node_num"));
 }
