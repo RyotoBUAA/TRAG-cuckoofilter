@@ -140,10 +140,10 @@ class SingleTable {
 
       Bucket * bucket_i = buckets_+i;
 
-      // EntityInfo * p0 = bucket_i->info_[0];
-      // EntityInfo * p1 = bucket_i->info_[1];
-      // EntityInfo * p2 = bucket_i->info_[2];
-      // EntityInfo * p3 = bucket_i->info_[3];
+      EntityInfo * p0 = bucket_i->info_[0];
+      EntityInfo * p1 = bucket_i->info_[1];
+      EntityInfo * p2 = bucket_i->info_[2];
+      EntityInfo * p3 = bucket_i->info_[3];
 
       for (size_t j = 0; j < kTagsPerBucket; j++) {
         int bubble_key = 0;

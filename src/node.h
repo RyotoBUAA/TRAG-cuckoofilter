@@ -141,7 +141,7 @@ namespace cuckoofilter {
                 std::map< std::string, std::set<std::string> > edges;
 
                 for (auto edge : data){
-                    // edges[edge.first].insert(edge.second);
+                    edges[edge.first].insert(edge.second);
                     edges[edge.second].insert(edge.first);
                 }
 

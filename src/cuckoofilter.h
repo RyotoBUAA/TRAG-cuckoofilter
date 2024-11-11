@@ -291,6 +291,8 @@ template <typename ItemType, size_t bits_per_item,
 std::string CuckooFilter<ItemType, bits_per_item, TableType, HashFamily>::Extract(
 const ItemType &key) const {
 
+  // std::cout << "extract: " << key << std::endl;
+
   auto start = std::chrono::high_resolution_clock::now();
 
   bool found = false;
