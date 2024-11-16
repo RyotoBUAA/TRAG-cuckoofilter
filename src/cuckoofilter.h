@@ -307,7 +307,10 @@ const ItemType &key) const {
   found = victim_.used && (tag == victim_.tag) &&
           (i1 == victim_.index || i2 == victim_.index);
 
+  
+
   if (found){
+    // std::cout << 2 << std::endl;
     // std::cout << "cpp debug: " <<  victim_.info << std::endl;
     // std::cout << "cpp debug: " <<  victim_.info->temperature << std::endl;
     // std::cout << "cpp debug: " <<  victim_.info->head << std::endl;
@@ -319,23 +322,28 @@ const ItemType &key) const {
     } 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end - start;
-    std::cout << std::fixed << std::setprecision(12);
-    std::cout << "extract by cuckoo filter: " << duration.count() << " s" << std::endl;
+    // std::cout << std::fixed << std::setprecision(12);
+    // std::cout << "extract by cuckoo filter: " << duration.count() << " s" << std::endl;
     return result;
   }else {
+    // std::cout << 3 << std::endl;
     // std::cout << "cpp debug: " <<  table_->FindInfoInBuckets(i1, i2, tag) << std::endl;
     // std::cout << "cpp debug: " << table_->FindInfoInBuckets(i1, i2, tag)->temperature  << std::endl;
     // std::cout << "cpp debug: " << table_->FindInfoInBuckets(i1, i2, tag)->head  << std::endl;
     std::string result = "";
-    EntityAddr * addr = table_->FindInfoInBuckets(i1, i2, tag)->head;
+    EntityInfo * r0;
+    EntityAddr * addr;
+    if (r0 = table_->FindInfoInBuckets(i1, i2, tag)){
+      addr = r0->head;
+    }else return "";
     while (addr != NULL){
       result += addr->addr->get_context();
       addr = addr->next;
     } 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end - start;
-    std::cout << std::fixed << std::setprecision(12);
-    std::cout << "extract by cuckoo filter: " << duration.count() << " s" << std::endl;
+    // std::cout << std::fixed << std::setprecision(12);
+    // std::cout << "extract by cuckoo filter: " << duration.count() << " s" << std::endl;
     return result;
   }
 
