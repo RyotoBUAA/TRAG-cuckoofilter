@@ -39,7 +39,9 @@ namespace cuckoofilter {
     };
 
     struct EntityAddr {
-        EntityNode * addr;
+        EntityNode * addr1;
+        EntityNode * addr2;
+        ENtityNode * addr3;
         EntityAddr * next;
     };
 
@@ -58,18 +60,33 @@ namespace cuckoofilter {
             EntityNode(std::string entity_name) : entity(entity_name) {
                 parent = NULL;
 
-                EntityAddr * entityAddr = new EntityAddr();
-                entityAddr->addr = this;
+                
 
                 if (addr_map[entity_name]){
-                    entityAddr->next = addr_map[entity_name]->head;
-                    addr_map[entity_name]->head = entityAddr;
+
+                    EntityAddr * t0 = addr_map[entity_name]->head;
+
+                    if (t0->addr1 == NULL) t0->addr1 = this;  
+                    else if (t0->addr2 == NULL) t0->addr2 = this;
+                    else if (t0->addr3 == NULL) t0->addr3 = this; 
+                    else {
+                        EntityAddr * entityAddr = new EntityAddr();
+                        entityAddr->addr1 = this;    
+                        entityAddr->next = addr_map[entity_name]->head;
+                        addr_map[entity_name]->head = entityAddr;
+                    }
+                    
                 }else{
                     EntityInfo * info = new EntityInfo();
                     addr_map[entity_name] = info;
                     info->temperature = 0;
+
+                    EntityAddr * entityAddr = new EntityAddr();
+                    entityAddr->addr1 = this;    
+
                     addr_map[entity_name]->head = entityAddr;
                 }
+
 
             }
 

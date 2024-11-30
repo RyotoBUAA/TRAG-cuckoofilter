@@ -317,7 +317,11 @@ const ItemType &key) const {
     std::string result = "";
     EntityAddr * addr = victim_.info->head;
     while (addr != NULL){
-      result += addr->addr->get_context();
+      
+      if (addr->addr1 != NULL) result += addr->addr1->get_context();
+      if (addr->addr2 != NULL) result += addr->addr2->get_context();
+      if (addr->addr3 != NULL) result += addr->addr3->get_context();
+      
       addr = addr->next;
     } 
     auto end = std::chrono::high_resolution_clock::now();
@@ -337,7 +341,11 @@ const ItemType &key) const {
       addr = r0->head;
     }else return "";
     while (addr != NULL){
-      result += addr->addr->get_context();
+
+      if (addr->addr1 != NULL) result += addr->addr1->get_context();
+      if (addr->addr2 != NULL) result += addr->addr2->get_context();
+      if (addr->addr3 != NULL) result += addr->addr3->get_context();
+      
       addr = addr->next;
     } 
     auto end = std::chrono::high_resolution_clock::now();
