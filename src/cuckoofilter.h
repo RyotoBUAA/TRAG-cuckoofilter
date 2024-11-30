@@ -132,6 +132,8 @@ class CuckooFilter {
 
   void BuildTree(const size_t max_tree_num, const size_t max_node_num) {
 
+    std::cout << "build in block link list......" << std::endl;
+
     FILE * in = fopen("entities_file.csv", "r");
     char input[1024];
     std::set<std::pair<std::string, std::string>> data;

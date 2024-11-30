@@ -41,7 +41,7 @@ namespace cuckoofilter {
     struct EntityAddr {
         EntityNode * addr1;
         EntityNode * addr2;
-        ENtityNode * addr3;
+        EntityNode * addr3;
         EntityAddr * next;
     };
 
